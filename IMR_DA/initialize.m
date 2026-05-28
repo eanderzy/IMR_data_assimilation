@@ -15,6 +15,13 @@ alpha = visco_params.alpha;
 lambda_nu = visco_params.lambda_nu;
 
 % Load Parameters :
+% CHANGE: R0 here is whatever was set in import_data_exp.m.
+
+% With the old approach R0=Rmax; with the new approach R0=R0_guess (stress-free radius).
+% All dimensionless groups (Ca, Re, Br, Fo_h) scale with R0, so the correct
+% value must be set before this call. No code change needed here, but verify
+% R0 carries the right value at this point.
+
 Pmt = IMRcall_parameters(R0,G,G1,mu); % Calls parameters script
 k = Pmt(1); chi = Pmt(2); fom = Pmt(3); foh = Pmt(4); Ca = Pmt(5);
 Re = Pmt(6); We = Pmt(7); Br = Pmt(8); A_star = Pmt(9); B_star = Pmt(10);
@@ -85,8 +92,10 @@ yk2 = ((2./(xk+1)-1)*L+1);
 %******************************************
 % Initial Conditions
 tspan_star = tspan/t0;
-R0_star = 1;
-U0_star = 0;  % Change as needed
+R0_star = 1; % Dimensionless initial radius = 1 by definition (R normalized by R0).
+% This is correct for BOTH the IC and 'ga' cases: the bubble starts at rest at R=R0.
+% For 'ga' forcing the bubble is in equilibrium at t=0 and the Gaussian pulse drives growth.
+U0_star = 0;  % Zero initial velocity (bubble at rest before acoustic pulse arrives)
 %Z10 = 0;
 S0 = 0;
 Tau0 = zeros(1,NT);
@@ -140,6 +149,13 @@ end
 X0 = [R0_star U0_star P0_star S0 Tau0 C0 Tm0];
 
 tau_del = [];
-
+% for imr
 x0_true = [X0,Br,foh,Ca,Re,De,alpha,lambda_nu,est_params];
+
+% CHANGE: to infer R0 as a free parameter, append log(R0) to the state vector here:
+
+x0_true = [X0, Br, foh, Ca, Re, De, alpha, lambda_nu, log(R0), est_params];
+% This matches the Mancia 2021 state vector: x = {R, Rdot, pb, S, T, C, G, mu, R0, alpha}.
+% The log transform keeps R0 positive during the DA update (same convention as Ca, Re).
+% You must also update f.m to extract R0 from the state vector instead of from vars{45}.
 N = length(x0_true);

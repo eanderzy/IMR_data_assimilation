@@ -41,10 +41,25 @@ if length(t(1,:)) == 1
 end
 
 Rexp = Rnew*1e-6;
-[R0,max_index] = max(Rexp);
+% CHANGE: The two lines below set R0 = Rmax and crop the data to start at
+% the maximum radius. For acoustic forcing with full growth+collapse:
+%   1. Replace R0 with the prescribed equilibrium/stress-free radius R0_guess
+%      (defined in DA_master.m from your KNN results).
+%   2. Remove the max_index crop so yth spans the full time series from nucleation.
+% Replace with:
+%   R0 = R0_guess;                 % prescribed stress-free radius (m)
+%   yth = Rexp ./ R0;              % normalize by stress-free radius, not Rmax
+%   (keep t unchanged - do not crop to max_index)
+% Note: yth will now start at values << 1 (growth phase) and peak at Rmax/R0 >> 1.
 
-yth = Rexp(max_index:end)./R0;
-t = t(max_index:end);
+% for IMR
+%[R0,max_index] = max(Rexp);       
+%yth = Rexp(max_index:end)./R0;   
+%t = t(max_index:end);             
+
+R0=R0_guess;
+yth = Rexp ./ R0;
+
 
 % delet NaNs
 kk = 1;
@@ -69,6 +84,12 @@ end
 timesteps = n+1;
 
 % Find peak_time
+% CHANGE: islocalmin finds collapse minima in yth. With the full growth+collapse
+% window yth is NOT normalized to start at 1, so the first local minimum is the
+% first collapse. num_peaks=1 (set in DA_master.m) selects the end of the
+% single growth+collapse cycle as the DA window boundary.
+% If yth has spurious early minima before growth peaks, add a depth threshold:
+%   peak_indices = find(islocalmin(yth) & yth < 0.2*max(yth));
 peak_indices = find(islocalmin(yth));
 peak_time = peak_indices(num_peaks);
 

@@ -1,6 +1,6 @@
 % This file sets up an initial ensemble for experimental data setups
 
-% State vector used: [R,U,P,S,Tau,C,Tm,log(Ca),log(Re)]
+% State vector used: [R,U,P,S,Tau,C,Tm,log(Ca),log(Re),log(Ro)]
 
 addpath ./IMR-vanilla/functions
 addpath ./IMR-vanilla/src
@@ -37,7 +37,9 @@ P_inf = Pmt_temp(19); T_inf = Pmt_temp(20);
 Req = mean(yth(end-5:end)); % take mean of end of sim to be Req
 P_guess = (P_inf + (2*ST)/(Req*R0) - Pvsat(T_inf))*(Req^3);
 
-Pext_Amp_Freq =[P_guess 0]; % [ Pressure ; Freq ], Freq = 0 for IC
+% Pext_Amp_Freq =[P_guess 0]; % [ Pressure ; Freq ], Freq = 0 for IC
+
+Pext_Amp_Freq = [-24 1e6 5e-6 3.7]
 %Pext_Amp_Freq = [100 0];
 
 % Simulation parameters
@@ -166,10 +168,16 @@ Caspread = 0.1;
 Respread = 0.1;
 %}
 
+% R0spread is defined in DA_master.m (add it there first).
+%spread = [Rspread; Uspread; Pspread; Sspread; ones(NT,1)*tauspread; ...
+%    ones(NT,1)*Cspread; ones(NTM,1)*Tmspread; Brspread; fohspread; ...
+%    Caspread; Respread; Despread; alphaspread; lambda_nuspread];
+ 
+% CHANGE: if R0 is added to the state vector in initialize.m, append R0spread here.
+% CHANGE: add R0spread at the end: ...; lambda_nuspread; R0spread];
 spread = [Rspread; Uspread; Pspread; Sspread; ones(NT,1)*tauspread; ...
     ones(NT,1)*Cspread; ones(NTM,1)*Tmspread; Brspread; fohspread; ...
-    Caspread; Respread; Despread; alphaspread; lambda_nuspread];
-
+    Caspread; Respread; Despread; alphaspread; lambda_nuspread, R0spread];
 %xi = (1 + spread .* randn(N,q)) .* repmat(x_init,1,q) + ...
 %    repmat([0;0.1;0.2;0.5;zeros(2*NT+NTM,1);0.01;0.01;0;0;0;0.01;0.01],1,q) .* randn(N,q);
 
@@ -190,7 +198,20 @@ xi = (1 + spread .* randn(N,q)) .* repmat(x_init,1,q) + ...
 xi(3,:) = log(xi(3,:));
 xi(3,:) = log(x0_true(3));
 %xi = [xi(1:2*NT+NTM+4,:);log(xi(2*NT+NTM+5:end,:))];
-xi = [xi(1:2*NT+NTM+6,:);log(xi(2*NT+NTM+7:2*NT+NTM+8,:));xi(end-2,:);log(xi(end-1,:));xi(end,:)]; % for now
+
+% CHANGE: this line applies log transforms to specific state vector indices.
+% Current layout (indices from 2*NT+NTM+7 onward): [Ca, Re, De, alpha, lambda_nu, R0]
+%   log-transformed: Ca (index 2*NT+NTM+7) and Re (index 2*NT+NTM+8)
+%   alpha log-transformed: (index end-1)
+% If R0 is added as log(R0) at the END of the state vector (after lambda_nu),
+% update this line to also apply log to the R0 entry, e.g.:
+%   xi = [...; log(xi(end,:))];   % where end is the R0 index
+% Verify indices match exactly after adding R0 to x0_true in initialize.m.
+
+
+% for imr: xi = [xi(1:2*NT+NTM+6,:);log(xi(2*NT+NTM+7:2*NT+NTM+8,:));xi(end-2,:);log(xi(end-1,:));xi(end,:)]; % for now
+
+xi = [xi(1:2*NT+NTM+6,:);log(xi(2*NT+NTM+7:2*NT+NTM+8,:));xi(end-3,:);log(xi(end-2,:));xi(end-1,:);log(xi(end,:))];
 %
 
 %% Other parameters to initialize

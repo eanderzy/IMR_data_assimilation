@@ -30,6 +30,15 @@ De = xi(2*NT+NTM+9);
 alpha = exp(xi(2*NT+NTM+10));
 lambda_nu = xi(2*NT+NTM+11);
 
+% CHANGE: if R0 is added to the state vector (as log(R0) at index 2*NT+NTM+12),
+R0 = exp(xi(2*NT+NTM+12));
+
+% Then recompute Ca and Re from R0 and the current ensemble values of G and mu,
+% because Ca=P_inf/G and Re=P_inf*R0/(mu*Uc) both depend on R0 through Uc=sqrt(P_inf/rho).
+% Without this, the forward model uses a fixed R0 regardless of what the DA update
+% assigns to the R0 entry of the state vector, breaking the joint inference.
+
+
 
 % restrictions on dynamics to keep quantities physical:
 
@@ -320,6 +329,7 @@ xf(3) = log(xf(3));
                 Sdot =  -2*U/R*(1/Rst + 1/Rst^4)/Ca + 4/Re*U^2/R^2;
                 % JY!!! "- 4/Re*udot/R" is added finally: Sdot = Sdot - SdotA*udot/R; % JY!!! Pay attention to here!
             else
+                % CHANGE/CHECK that this is correct for acoustic pulse
                 S = -(5 -4/R - 1/R^4)/(2*Ca) - 4/Re*U/R;
                 Sdot =  -2*U*(1/R^2 + 1/R^5)/Ca + 4/Re*U^2/R^2;
             end
@@ -336,6 +346,7 @@ xf(3) = log(xf(3));
                     2*alpha*U/R*(1/Rst^8 + 1/Rst^5 + 2/Rst^2 + 2*Rst)/(Ca) + 4/Re*U^2/R^2;
                 %JY!!! "- 4/Re*udot/R" is added later: Sdot = Sdot - SdotA*udot/R; % JY!!! Pay attention to here!
             else
+                % CHANGE/ADD for acoustic pulse
                 disp('Not finished in non-IC case for Fung model!')
             end
             % ====== JY!!! First order Fung G + first order mu model approx ======
@@ -418,6 +429,7 @@ xf(3) = log(xf(3));
                 end
             end
         end
+
         
         %****************************************************
         

@@ -8,6 +8,7 @@
 %addpath ~/Dropbox/Research/Code/EnKS/v2/IMRfiles
 %addpath ~/Dropbox/Research/Code/EnKS/v2/paper_data
 %addpath ~/Dropbox/Research/Code/EnKS/v2/paper_data/draft
+load('/Users/eanderzy/projects/IMR_data_assimilation/IMR_DA/IEnKS_MDA_lag53_q48test1_26-May-2026 15:48:03.mat')
 
 set(groot, 'defaultAxesTickLabelInterpreter','latex');
 set(groot, 'defaultLegendInterpreter','latex');

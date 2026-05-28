@@ -163,7 +163,7 @@ for j = 1
     time_index = time_index + l;
     
 end
-
+%%
 c = clock;
-%save(['IEnKS_MDA_lag',num2str(l),'_q',num2str(q),'test1_',datestr(now)],'-v7.3')
+save(['IEnKS_MDA_lag',num2str(l),'_q',num2str(q),'test1_',datestr(now)],'-v7.3')
 run_time = toc

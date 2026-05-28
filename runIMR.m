@@ -86,7 +86,7 @@ for expt = expts
     for k = 1:length(G1_ooms)
         for j= 1:length(mu_ooms)
             tic
-            parfor i=1:length(G_ooms)
+            for i=1:length(G_ooms)
                 soln_mx{i,j,k} = struct('G',10^G_ooms(i),'mu',10^mu_ooms(j),'G1',10^G1_ooms(k),...
                     'tcs_star',[],'Rratios',[],'tmaxs_star',[],'t2',[],'R2',[],'U',[],'P',[],'J',[],'T',[],'C',[],...
                     'Cdel',[],'tdel',[],'Tdel',[]);

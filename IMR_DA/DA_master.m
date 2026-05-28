@@ -20,9 +20,15 @@ data_type = 'exp'; % 'sim' or 'exp'
 data_set = 'SoftPA_nobeads';
 data_filepath = (['example_data/']);
 data_filename = 'A_E2_002.mat'; % name of file containing R vs T data
+% CHANGE: loop over all 19 experiment files here, running the DA block
+% below for each file, e.g. wrap in a for-loop: for i = 1:19; data_filename = filelist{i}; ...
 %dataset = 2; % data set number (if needed - old data format)
-num_peaks = 2; % number of 'peaks' to assimilate in radius data
+
+num_peaks = 1; % number of 'peaks' to assimilate in radius data
                % (peaks = collapse points as in Estrada paper)
+% CHANGE: with Gaussian forcing the window starts at t=0 (nucleation), not Rmax.
+% num_peaks controls how many collapse points are included in the DA window;
+% keep at 1 since acoustic data only has one clean growth+collapse cycle.
 
 %% Data assimilation parameters
 
@@ -43,11 +49,19 @@ mu_guess = 0.118;
 alpha_guess = 0.1;
 lambda_nu_guess = 0.1;
 %}
+% CHANGE: replace scalar guesses with the per-experiment KNN-NRMSE optimal
+% values. Load your result table and index by experiment i:
+%   G_guess = knn_results(i).G;
+%   mu_guess = knn_results(i).mu;
+%   R0_guess = knn_results(i).R0;   % needed when R0 is inferred
+% These become the ensemble center; the spread parameters below control
+% how much the DA is allowed to deviate from these priors.
 G_guess = 500;
 G1_guess = 1e9;
 mu_guess = 0.05;
 alpha_guess = 0.5;
 lambda_nu_guess = 0.1;
+R0_guess = 1e-6; % CHANGE: add R0_guess (meters). Set from KNN result for each experiment.
 %}
 q = 48; % Number of ensemble members
 std = 0.01; % expected standard deviation of measurements;
@@ -67,11 +81,12 @@ end
 % needs to be attributed to earlier or later points in assimilation
 
 %% Modeling parameters
-model = 'fung'; % 'neoHook','nhzen','sls','linkv','fung','fung2','fungexp','fungnlvis'
+model = 'neoHook'; % 'neoHook','nhzen','sls','linkv','fung','fung2','fungexp','fungnlvis'
 NT = 240; % Amount of nodes inside the bubble
 NTM = 240; % Amount of nodes outside the bubble
-Pext_type = 'IC'; % Type of external forcing
-ST = 0.056; % (N/m) Liquid Surface Tension
+Pext_type = 'ga'; % Type of external forcing
+% 'ga' is already correct for acoustic Gaussian pulse forcing.
+ST = 0.072; % (N/m) Liquid Surface Tension
 
 Tgrad = 1; % Thermal effects inside bubble
 Tmgrad = 1; % Thermal effects outside bubble
@@ -94,7 +109,9 @@ beta = 1.02; % additive covariance parameter (lambda in paper) (1.005 < beta < 1
 alpha = 0.005; % random noise in forecast step (only for EnKF)
 
 %% Spread of parameters in the ensemble
-%
+
+% CHANGE: use the standard deviations from the inferred parameters to inform
+%       these values
 %Rspread = 0.02;
 Rspread = 0.01;
 Uspread = 0.1;
@@ -110,8 +127,12 @@ fohspread = 0.01;
 Caspread = 0;
 Respread = 0.3;
 Despread = 0; % set to 0 if not used in model
-alphaspread = 0.3; % set to 0 if not used in model
+alphaspread = 0; % set to 0 if not used in model
 lambda_nuspread = 0; % set to 0 if not used in model
+% CHANGE: add R0spread here. R0 is log-transformed in the state vector (like Ca, Re),
+% so R0spread is a fractional multiplier on log(R0). Start with ~0.3 (similar to Respread).
+% If R0 is NOT being inferred, set R0spread = 0 and fix R0 = R0_guess in import_data_exp.m.
+R0spread = 0.3; % CHANGE: add this line
 %}
 %{
 Rspread = 0;
