@@ -48,7 +48,6 @@ opts.SYM = true;
 % Pre-allocating memory:
 x = zeros(N,q,n+1);
 
-
 t = linspace(0,tspan,n+1);
 x(:,:,1) = xi;
 
@@ -97,7 +96,8 @@ for j = 1
         t1 = t(time_index)/t0;
         t2 = t(time_index+1)/t0;
         
-        parfor memb = 1:q
+        %parfor
+        for memb = 1:q
             %memb
             %tau_del{memb}
             [E2(:,memb,1),tau_del{memb}] = f(t1,t2,E1(:,memb),vars,tau_del{memb});
@@ -107,13 +107,15 @@ for j = 1
         y2b(:,1) = mean(y2(:,:,1),2);
         HA2(:,:,1) = y2(:,:,1) - y2b(:,1)*ones(1,q);
         HA2(:,:,1) = HA2(:,:,1)*TTinv;
+        size(yth)
         dy2(:,1) = yth(:,time_index+1) - y2b(:,1);
         
         for kk = 2:l
             %kk
             t1 = t(time_index+kk-1)/t0;
             t2 = t(time_index+kk)/t0;
-            parfor memb = 1:q
+            %parfor
+            for memb = 1:q
                 [EE(:,memb),tau_del{memb}] = f(t1,t2,E2(:,memb,kk-1),vars,tau_del{memb});
             end
             E2(:,:,kk) = EE;

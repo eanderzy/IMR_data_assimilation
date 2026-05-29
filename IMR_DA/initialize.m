@@ -6,6 +6,7 @@ global tspan R0 NT NTM Pext_type Pext_Amp_Freq Tgrad Cgrad model G G1 ...
     yk deltaYm xk yk2 Pv REq D_Matrix_T_C DD_Matrix_T_C ...
     D_Matrix_Tm DD_Matrix_Tm x0_true N
 %}
+global dt_star w_star mn
 %***************************************
 % Extract viscoelastic parameters from stuct
 G = visco_params.G;
@@ -101,10 +102,14 @@ S0 = 0;
 Tau0 = zeros(1,NT);
 C0 = C0*ones(1,NT);
 Tm0 = ones(1,NTM);
+
 if strcmp(Pext_type,'ga')
-    dt_star = Pext_Amp_Freq(2)/t0;
-    w_star = Pext_Amp_Freq(3)*t0;
+    dt_star = Pext_Amp_Freq(2) / t0;           % center time (s) → dimensionless
+    w_star  = 2*pi * Pext_Amp_Freq(3) * t0;    % carrier freq (Hz) → dimensionless angular freq
+    mn      = Pext_Amp_Freq(4);                 % Hann window exponent
 end
+Pv = Pvsat(1*T_inf)/P_inf;
+REq = 1;
 
 % Need to modify intial conditions for the Out-of-Equilibrium Rayleigh
 % Collpase:
@@ -150,12 +155,11 @@ X0 = [R0_star U0_star P0_star S0 Tau0 C0 Tm0];
 
 tau_del = [];
 % for imr
-x0_true = [X0,Br,foh,Ca,Re,De,alpha,lambda_nu,est_params];
+%x0_true = [X0,Br,foh,Ca,Re,De,alpha,lambda_nu,est_params];
 
-% CHANGE: to infer R0 as a free parameter, append log(R0) to the state vector here:
+% to infer R0 as a free parameter, append log(R0) to the state vector here:
 
 x0_true = [X0, Br, foh, Ca, Re, De, alpha, lambda_nu, log(R0), est_params];
 % This matches the Mancia 2021 state vector: x = {R, Rdot, pb, S, T, C, G, mu, R0, alpha}.
 % The log transform keeps R0 positive during the DA update (same convention as Ca, Re).
-% You must also update f.m to extract R0 from the state vector instead of from vars{45}.
 N = length(x0_true);

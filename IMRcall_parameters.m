@@ -59,6 +59,6 @@ function [P]  = IMRcall_parameters(R0,G,G1,mu)
     
     P = [k chi fom foh Ca Re We Br A_star...
          B_star Rv_star Ra_star P0_star t0 C0 L L_heat_star Km_star ...
-         P_inf  T_inf C_star De ];
+         P_inf T_inf C_star De rho];
     
 end

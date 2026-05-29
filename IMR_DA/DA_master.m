@@ -1,6 +1,7 @@
 % Data assimilation master file
 % Author: Jean-Sebastien Spratt -- jspratt@caltech.edu
-
+% Edits: 5/28/26 Eleanor Anderson-Zych -- eanderzy@umich.edu
+%       - to read in acoustic cavitation data
 % This file is a wrapper which runs a variety of data assimilation methods
 % on laser-induced cavitation radius vs time data. It uses the code from
 % Spratt et al. (2020). Depending on which data assimilation method and
@@ -16,53 +17,33 @@ clc
 % If the format is different, the import_data_exp.m file will need to be
 % modified accordingly
 
-data_type = 'exp'; % 'sim' or 'exp'
-data_set = 'SoftPA_nobeads';
-data_filepath = (['example_data/']);
-data_filename = 'A_E2_002.mat'; % name of file containing R vs T data
-% CHANGE: loop over all 19 experiment files here, running the DA block
-% below for each file, e.g. wrap in a for-loop: for i = 1:19; data_filename = filelist{i}; ...
-%dataset = 2; % data set number (if needed - old data format)
+data_type     = 'exp';
+%data_set = 'SoftPA_nobeads';
+%data_filepath = (['example_data/']);
+%data_filename = 'A_E2_002.mat';
+data_filepath = 'data/opt_param_data/';
+knn_filename  = 'IMR_FullDataset_Results_03ag_NH_2025-07-31-10-57-31.mat';
 
-num_peaks = 1; % number of 'peaks' to assimilate in radius data
-               % (peaks = collapse points as in Estrada paper)
-% CHANGE: with Gaussian forcing the window starts at t=0 (nucleation), not Rmax.
-% num_peaks controls how many collapse points are included in the DA window;
-% keep at 1 since acoustic data only has one clean growth+collapse cycle.
+% Load KNN results once: exp_data{i} has .time (µs) and .radius (µm) per bubble;
+% results.G(i), results.mu(i), results.R0(i) are per-bubble optimal parameters.
+% Verify field names match your actual results struct before running.
+knn_data  = load([data_filepath, knn_filename]);
+N_bubbles = 1;%length(knn_data.exp_data);
+
+num_peaks = 1; % single growth+collapse cycle per acoustic experiment
 
 %% Data assimilation parameters
 
 method = 'En4D'; % data assimilation method ('En4D','EnKS',('EnKF'))
 
-% Initial parameter guesses (all must be specified even if not used, in
-% order to run)
-%{
-G_guess = 3000;
-G1_guess = 1e9;
-mu_guess = 0.2;
-alpha_guess = 0.1;
+% Fixed parameters across all experiments
+%G_guess = 500;
+%mu_guess = 0.05;
+%R0_guess = 1e-6;
+G1_guess        = 1e9;
+alpha_guess     = 0.5;
 lambda_nu_guess = 0.1;
-%
-G_guess = 2120;
-G1_guess = 1e9;
-mu_guess = 0.118;
-alpha_guess = 0.1;
-lambda_nu_guess = 0.1;
-%}
-% CHANGE: replace scalar guesses with the per-experiment KNN-NRMSE optimal
-% values. Load your result table and index by experiment i:
-%   G_guess = knn_results(i).G;
-%   mu_guess = knn_results(i).mu;
-%   R0_guess = knn_results(i).R0;   % needed when R0 is inferred
-% These become the ensemble center; the spread parameters below control
-% how much the DA is allowed to deviate from these priors.
-G_guess = 500;
-G1_guess = 1e9;
-mu_guess = 0.05;
-alpha_guess = 0.5;
-lambda_nu_guess = 0.1;
-R0_guess = 1e-6; % CHANGE: add R0_guess (meters). Set from KNN result for each experiment.
-%}
+% Per-experiment G_guess, mu_guess, R0_guess are set inside the loop below
 q = 48; % Number of ensemble members
 std = 0.01; % expected standard deviation of measurements;
 init_scheme = 2; % leave as 2, initializes ensemble with truth + noise
@@ -72,7 +53,7 @@ epsilon = 1e-5; % threshold difference in norm of state vector between steps
 max_iter = 5; % max # of iterations until end optimization (5 to 10 is usually good)
 
 % IEnKS only:
-if method == 'EnKS'
+if strcmp(method, 'EnKS')
     l = 3; %lag of smoother
 end
 
@@ -82,14 +63,13 @@ end
 
 %% Modeling parameters
 model = 'neoHook'; % 'neoHook','nhzen','sls','linkv','fung','fung2','fungexp','fungnlvis'
-NT = 240; % Amount of nodes inside the bubble
-NTM = 240; % Amount of nodes outside the bubble
+NT = 30; % Amount of nodes inside the bubble
+NTM = 30; % Amount of nodes outside the bubble
 Pext_type = 'ga'; % Type of external forcing
-% 'ga' is already correct for acoustic Gaussian pulse forcing.
 ST = 0.072; % (N/m) Liquid Surface Tension
 
 Tgrad = 1; % Thermal effects inside bubble
-Tmgrad = 1; % Thermal effects outside bubble
+Tmgrad = 0; % Thermal effects outside bubble
 Cgrad = 1; % Vapor diffusion effects
 comp = 1; % Activates the effect of compressibility (0=Rayleigh-Plesset, 1=Keller-Miksis)
 disp_timesteps = 1; % displays timesteps in En4D run (for debugging)
@@ -109,31 +89,22 @@ beta = 1.02; % additive covariance parameter (lambda in paper) (1.005 < beta < 1
 alpha = 0.005; % random noise in forecast step (only for EnKF)
 
 %% Spread of parameters in the ensemble
-
-% CHANGE: use the standard deviations from the inferred parameters to inform
-%       these values
-%Rspread = 0.02;
-Rspread = 0.01;
-Uspread = 0.1;
-Pspread = 0.1;
-Sspread = 0.1;
-tauspread = 0.1;
-Cspread = 0.001;
-Tmspread = 0.0005;
-%Tmspread = 0.001;
-Brspread = 0.01;
-fohspread = 0.01;
-%Caspread = 0.3;
-Caspread = 0;
-Respread = 0.3;
-Despread = 0; % set to 0 if not used in model
-alphaspread = 0; % set to 0 if not used in model
-lambda_nuspread = 0; % set to 0 if not used in model
-% CHANGE: add R0spread here. R0 is log-transformed in the state vector (like Ca, Re),
-% so R0spread is a fractional multiplier on log(R0). Start with ~0.3 (similar to Respread).
-% If R0 is NOT being inferred, set R0spread = 0 and fix R0 = R0_guess in import_data_exp.m.
-R0spread = 0.3; % CHANGE: add this line
-%}
+% Material parameter fractional spreads derived from KNN population statistics (CV = std/mean)
+Rspread         = 0.01;
+Uspread         = 0.1;
+Pspread         = 0.1;
+Sspread         = 0.1;
+tauspread       = 0.1;
+Cspread         = 0.001;
+Tmspread        = 0.0005;
+Brspread        = 0.01;
+fohspread       = 0.01;
+Caspread        = knn_data.weighted_stats.G.std  / knn_data.weighted_stats.G.mean;
+Respread        = knn_data.weighted_stats.mu.std / knn_data.weighted_stats.mu.mean;
+Despread        = 0;
+alphaspread     = 0;
+lambda_nuspread = 0;
+R0spread        = knn_data.weighted_stats.R0.std / knn_data.weighted_stats.R0.mean;
 %{
 Rspread = 0;
 Uspread = 0;
@@ -151,31 +122,37 @@ alphaspread = 0; % set to 0 if not used in model
 lambda_nuspread = 0; % set to 0 if not used in model
 %}
 
-%% Do not modify
-visco_params = struct('G',G_guess,'G1',G1_guess,'mu',mu_guess, ...
-    'alpha',alpha_guess,'lambda_nu',lambda_nu_guess);
+%% Loop over all experiments
 est_params = [];
 R = std^2; % Measurement error covariance
 
-%% Run main for corresponding method:
+for bubble_idx = 1:N_bubbles
+    fprintf('=== Bubble %d / %d ===\n', bubble_idx, N_bubbles);
 
-if method == 'En4D'
-    main_En4D_peaks
-elseif method == 'EnKS'
-    main_mda_peaks
+    % Per-experiment priors from KNN-NRMSE search
+    G_guess  = knn_data.results_all.G(bubble_idx);   % Pa
+    mu_guess = knn_data.results_all.mu(bubble_idx);   % Pa·s
+    R0_guess = knn_data.results_all.R0(bubble_idx);   % m
+
+    visco_params = struct('G',G_guess,'G1',G1_guess,'mu',mu_guess, ...
+        'alpha',alpha_guess,'lambda_nu',lambda_nu_guess);
+
+    if strcmp(method,'En4D')
+        main_En4D_peaks
+    elseif strcmp(method,'EnKS')
+        main_mda_peaks
+    end
+
+    save(sprintf('./bubble%02d_%s_%s_q%d_G%.0f_mu%.4f_%speaks%s.mat', ...
+        bubble_idx, method, model, q, G_guess, mu_guess, num_peaks, ...
+        datestr(now,'yyyy-mm-dd_HH-MM')), '-v7.3')
 end
-%
-% Save results
-save(['./results/',data_filename(1:8),'_',method, ...
-    '_',model,'_dataset',num2str(dataset),'_q',num2str(q),'_G', ...
-    num2str(G_guess),'_mu',num2str(mu_guess),'_',num2str(num_peaks), ...
-    'peaks',datestr(now),'.mat'],'-v7.3')
-%}
+
 %% Plotting
 %{
-if method == 'En4D'
+if strcmp(method,'En4D')
     plot_En4D_exp
-elseif method == 'EnKS'
+elseif strcmp(method,'EnKS')
     plot_Kalman_exp
 end
 %}

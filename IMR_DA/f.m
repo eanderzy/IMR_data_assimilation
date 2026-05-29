@@ -4,7 +4,7 @@ global NT Pext_type Pext_Amp_Freq disptime Tgrad Tmgrad ...
     comp t0 neoHook nhzen sls linkv k chi fom foh We Br A_star ...
     B_star Rv_star Ra_star L L_heat_star Km_star P_inf T_inf C_star ...
     De deltaY yk deltaYm xk yk2 Pv REq D_Matrix_T_C DD_Matrix_T_C ...
-    D_Matrix_Tm DD_Matrix_Tm Ca Re
+    D_Matrix_Tm DD_Matrix_Tm Ca Re dt_star w_star mn
 
 NT= vars{1};Pext_type=vars{2};Pext_Amp_Freq=vars{3};disptime=vars{4};
 Tgrad=vars{5};Tmgrad=vars{6};Cgrad=vars{7};comp=vars{8};t0=vars{9};
@@ -30,7 +30,7 @@ De = xi(2*NT+NTM+9);
 alpha = exp(xi(2*NT+NTM+10));
 lambda_nu = xi(2*NT+NTM+11);
 
-% CHANGE: if R0 is added to the state vector (as log(R0) at index 2*NT+NTM+12),
+% if R0 is added to the state vector (as log(R0) at index 2*NT+NTM+12),
 R0 = exp(xi(2*NT+NTM+12));
 
 % Then recompute Ca and Re from R0 and the current ensemble values of G and mu,
@@ -47,7 +47,8 @@ xi(5+NT:4+(2*NT)) = max(xi(5+NT:4+(2*NT)),0);
 
 options = odeset('RelTol',1e-3);
 %[~ ,X] = ode23tb(@bubble, [ti_star tf_star], xi(1:end-2)',options);
-[~ ,X] = ode23tb(@bubble, [ti_star tf_star], xi(1:2*NT+NTM+4)');
+%[~ ,X] = ode23tb(@bubble, [ti_star tf_star], xi(1:2*NT+NTM+4)');
+[~ ,X] = ode15s(@bubble, [ti_star tf_star], xi(1:2*NT+NTM+4)');
 
 xf = [X(end,:)';Br;foh;xi(2*NT+NTM+7:end)];
 xf(3) = log(xf(3));
@@ -153,8 +154,8 @@ xf(3) = log(xf(3));
             Pext = 0;
             P_ext_prime = 0;
         elseif strcmp(Pext_type , 'ga')
-            Pext = pf(t)/P_inf;
-            P_ext_prime = pfdot(t)/P_inf;
+            Pext = pf(t);
+            P_ext_prime = pfdot(t);
         end
         
         % *****************************************
@@ -329,7 +330,7 @@ xf(3) = log(xf(3));
                 Sdot =  -2*U/R*(1/Rst + 1/Rst^4)/Ca + 4/Re*U^2/R^2;
                 % JY!!! "- 4/Re*udot/R" is added finally: Sdot = Sdot - SdotA*udot/R; % JY!!! Pay attention to here!
             else
-                % CHANGE/CHECK that this is correct for acoustic pulse
+                
                 S = -(5 -4/R - 1/R^4)/(2*Ca) - 4/Re*U/R;
                 Sdot =  -2*U*(1/R^2 + 1/R^5)/Ca + 4/Re*U^2/R^2;
             end
@@ -346,8 +347,11 @@ xf(3) = log(xf(3));
                     2*alpha*U/R*(1/Rst^8 + 1/Rst^5 + 2/Rst^2 + 2*Rst)/(Ca) + 4/Re*U^2/R^2;
                 %JY!!! "- 4/Re*udot/R" is added later: Sdot = Sdot - SdotA*udot/R; % JY!!! Pay attention to here!
             else
-                % CHANGE/ADD for acoustic pulse
-                disp('Not finished in non-IC case for Fung model!')
+                % disp('Not finished in non-IC case for Fung model!')
+                 S = -(1-3*alpha)*(5 - 4/R - 1/R^4)/(2*Ca) - ... % JY!!!
+                2*alpha*(-27/40 - 1/8/R^8 - 1/5/R^5 - 1/R^2 + 2*R)/(Ca) - 4/Re*U/R; % JY!!!
+                Sdot = -2*U*(1-3*alpha)*(1/R^2 + 1/R^5)/Ca - ... % JY!!!
+                2*alpha*U*(1/R^9 + 1/R^6 + 2/R^3 + 2)/(Ca) + 4/Re*U^2/R^2; % JY!!
             end
             % ====== JY!!! First order Fung G + first order mu model approx ======
             % % alpha = 0; lambda_nu = 0.001;
@@ -477,8 +481,8 @@ xf(3) = log(xf(3));
         end
         
         dxdt = [rdot; udot; pdot; Sdot; Tau_prime; C_prime; Tm_prime];
-        if isreal(rdot)==0
-            pause;
+        if ~isreal(rdot)
+            %pause;
         end
     end
 %*************************************************************************
@@ -526,21 +530,27 @@ xf(3) = log(xf(3));
     end
 
 % Gaussian pressure functions
-% acoustic pressure
+    % acoustic pressure
     function p = pf(t)
-        if t<(dt_star-5*tw_star) || t>(dt_star+5*tw_star)
-            p=0;
+        
+        if t < dt_star - pi/w_star
+            p = 0;
+        elseif t > dt_star + pi/w_star
+            p = 0;
         else
-            p = -Pext_Amp_Freq(1)*exp(-(t-dt_star).^2/tw_star^2);
+            p = Pext_Amp_Freq(1)/P_inf*(0.5 + 0.5*cos(w_star*(t - dt_star))).^mn;
         end
+        
     end
 
 % time derivative of acoustic pressure
     function pdot = pfdot(t)
-        if t<(dt_star-5*tw_star) || t>(dt_star+5*tw_star)
-            pdot=0;
+        if t < dt_star - pi/w_star
+            pdot = 0;
+        elseif t > dt_star + pi/w_star
+            pdot = 0;
         else
-            pdot = 2*(t-dt_star)/tw_star^2*Pext_Amp_Freq(1).*exp(-(t-dt_star).^2/tw_star^2);
+            pdot = -Pext_Amp_Freq(1)/P_inf*mn*(0.5+0.5*cos(w_star*(t-dt_star))).^(mn-1)*0.5*w_star.*sin(w_star*(t-dt_star));
         end
         
     end

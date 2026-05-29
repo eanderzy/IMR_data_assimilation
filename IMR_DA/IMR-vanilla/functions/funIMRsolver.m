@@ -1,4 +1,4 @@
-function [t,R,U,P,S,T,C,Tm,tdel,Tdel,Cdel,Tau] = funIMRsolver(model,matprop,tspan,R0,NT,NTM, ...
+function [t,R,U,P,S,T,C,Tm,tdel,Tdel,Cdel,Tau, pA] = funIMRsolver(model,matprop,tspan,R0,NT,NTM, ...
     Pext_type,Pext_Amp_Freq,disptime,Tgrad,Tmgrad,Cgrad,Dim,comp,REq,IMRsolver_RelTolX,timesteps)
 K=0;
 % Authors:
@@ -151,10 +151,20 @@ S0 = 0;
 Tau0 = zeros(1,NT);
 C0 = C0*ones(1,NT);
 Tm0 = ones(1,NTM);
+
+%if strcmp(Pext_type,'ga')
+%    dt_star = Pext_Amp_Freq(2)/t0;
+%    tw_star = Pext_Amp_Freq(3)/t0;
+%end
+
 if strcmp(Pext_type,'ga')
-    dt_star = Pext_Amp_Freq(2)/t0;
-    tw_star = Pext_Amp_Freq(3)/t0;
+    dt_star = Pext_Amp_Freq(2)/t0
+    w_star = Pext_Amp_Freq(3)*t0
+    mn = Pext_Amp_Freq(4)
+    tspan_star
 end
+Pv = Pvsat(1*T_inf)/P_inf;
+REq = 1;
 
 % Need to modify intial conditions for the Out-of-Equilibrium Rayleigh
 % Collpase:
@@ -209,8 +219,10 @@ Cdel = [];
 X0 = reshape(X0,length(X0),1);
 
 %[X] = ode5(@bubble,linspace(0,tspan_star,1e4), X0);
-options = odeset('RelTol',IMRsolver_RelTolX);
-[t,X] = ode23tb(@bubble,linspace(0,tspan_star,timesteps), X0, options);
+options = odeset('RelTol',IMRsolver_RelTolX,'MaxStep',0.1/w_star);
+%[t,X] = ode23tb(@bubble,linspace(0,tspan_star,timesteps), X0, options);
+[t,X] = ode15s(@bubble,[0 tspan_star], X0, options);
+
 % figure,plot(t,X(:,1))
 % format long; mean(X(end-20:end,1))
 
@@ -222,7 +234,11 @@ Tau = X(:,5:(NT+4)); % Variable relating to internal temp
 C =  X(:,(NT+5):(2*NT+4)); % Vapor concentration in the bubble
 Tm = X(:, (2*NT+5):end ); % Temperature variation in the medium
 T = (A_star -1 + sqrt(1+2*Tau*A_star)) / A_star; % Temp in bubble
-
+pA = zeros(size(t));
+for n = 1:length(t) 
+    pA(n) = pf(t(n)); 
+end
+size(pA)
 % ******************************
 % Transform variables back into their dimensional form
 if (Dim == 1)
@@ -234,6 +250,7 @@ if (Dim == 1)
     U = U*(R0/t0);
     tdel= tdel*t0;
     Tdel = Tdel*T_inf;
+    pA = pA.*P_inf;
 end
 %***********************
 
@@ -639,24 +656,31 @@ end
         %************************************************************************
     end
 
-% Gaussian pressure functions
-% acoustic pressure
-    function p = pf(t)
-        if t<(dt_star-5*tw_star) || t>(dt_star+5*tw_star)
-            p=0;
-        else
-            p = -Pext_Amp_Freq(1)*exp(-(t-dt_star).^2/tw_star^2);
-        end
-    end
 
-% time derivative of acoustic pressure
-    function pdot = pfdot(t)
-        if t<(dt_star-5*tw_star) || t>(dt_star+5*tw_star)
-            pdot=0;
+        % acoustic pressure
+    function p = pf(t)
+        
+        if t < dt_star - pi/w_star 
+            p = 0;
+       
+        elseif t > dt_star + pi/w_star
+            p = 0;
         else
-            pdot = 2*(t-dt_star)/tw_star^2*Pext_Amp_Freq(1).*exp(-(t-dt_star).^2/tw_star^2);
+            p = Pext_Amp_Freq(1)./P_inf.*(0.5 + 0.5*cos(w_star.*(t - dt_star))).^mn;
+            fprintf('pressure negative')
         end
         
     end
+        function pdot = pfdot(t)
+        if t < dt_star - pi/w_star
+            pdot = 0;
+        elseif t > dt_star + pi/w_star
+            pdot = 0;
+        else
+            pdot = -Pext_Amp_Freq(1)/P_inf*mn*(0.5+0.5*cos(w_star*(t-dt_star))).^(mn-1)*0.5*w_star.*sin(w_star*(t-dt_star));
+        end
+        
+    end
+
 
 end

@@ -2,8 +2,9 @@
 
 % State vector used: [R,U,P,S,Tau,C,Tm,log(Ca),log(Re),log(Ro)]
 
-addpath ./IMR-vanilla/functions
-addpath ./IMR-vanilla/src
+script_dir = fileparts(mfilename('fullpath'));
+addpath(fullfile(script_dir, 'IMR-vanilla', 'functions'));
+addpath(fullfile(script_dir, 'IMR-vanilla', 'src'));
 
 % Shuffle rng to ensure randomness of results
 rng('shuffle')
@@ -34,12 +35,12 @@ Pmt_temp = IMRcall_parameters(R0,G_guess,G1_guess,mu_guess); % Calls parameters 
 Ca = Pmt_temp(5); Re = Pmt_temp(6);
 P_inf = Pmt_temp(19); T_inf = Pmt_temp(20);
 
-Req = mean(yth(end-5:end)); % take mean of end of sim to be Req
-P_guess = (P_inf + (2*ST)/(Req*R0) - Pvsat(T_inf))*(Req^3);
+%Req = mean(yth(end-5:end)); % take mean of end of sim to be Req
+%P_guess = (P_inf + (2*ST)/(Req*R0) - Pvsat(T_inf))*(Req^3);
 
 % Pext_Amp_Freq =[P_guess 0]; % [ Pressure ; Freq ], Freq = 0 for IC
 
-Pext_Amp_Freq = [-24 1e6 5e-6 3.7]
+Pext_Amp_Freq = [-24e6 5e-7 2*pi*1e6 3.7];
 %Pext_Amp_Freq = [100 0];
 
 % Simulation parameters
@@ -168,21 +169,21 @@ Caspread = 0.1;
 Respread = 0.1;
 %}
 
-% R0spread is defined in DA_master.m (add it there first).
+% old version
 %spread = [Rspread; Uspread; Pspread; Sspread; ones(NT,1)*tauspread; ...
 %    ones(NT,1)*Cspread; ones(NTM,1)*Tmspread; Brspread; fohspread; ...
 %    Caspread; Respread; Despread; alphaspread; lambda_nuspread];
  
-% CHANGE: if R0 is added to the state vector in initialize.m, append R0spread here.
-% CHANGE: add R0spread at the end: ...; lambda_nuspread; R0spread];
+% CHANGE: R0 is added to the state vector in initialize.m, append R0spread here.
 spread = [Rspread; Uspread; Pspread; Sspread; ones(NT,1)*tauspread; ...
     ones(NT,1)*Cspread; ones(NTM,1)*Tmspread; Brspread; fohspread; ...
-    Caspread; Respread; Despread; alphaspread; lambda_nuspread, R0spread];
-%xi = (1 + spread .* randn(N,q)) .* repmat(x_init,1,q) + ...
+    Caspread; Respread; Despread; alphaspread; lambda_nuspread; R0spread];
+
+% old version
+%   xi = (1 + spread .* randn(N,q)) .* repmat(x_init,1,q) + ...
 %    repmat([0;0.1;0.2;0.5;zeros(2*NT+NTM,1);0.01;0.01;0;0;0;0.01;0.01],1,q) .* randn(N,q);
 
-xi = (1 + spread .* randn(N,q)) .* repmat(x_init,1,q) + ...
-    repmat([0;0;0;0;zeros(2*NT+NTM,1);0;0;0;0;0;0;0],1,q) .* randn(N,q);
+xi = (1 + spread .* randn(N,q)) .* repmat(x_init,1,q);
 
 %xi = (1 + spread .* randn(N,q)) .* repmat(x_init,1,q) + ...
 %    repmat([0;0.01;0.01;0.01;zeros(2*NT+NTM,1);0;0],1,q) .* randn(N,q);
