@@ -102,6 +102,9 @@ elseif strcmp(model,'sls') == 1
     sls = 1;
 elseif strcmp(model,'linkv') == 1
     linkv = 1;
+elseif strcmp(model,'none')==1
+    none = 1;
+    G=0;
 else
     nhzen = 1;
 end
@@ -158,10 +161,9 @@ Tm0 = ones(1,NTM);
 %end
 
 if strcmp(Pext_type,'ga')
-    dt_star = Pext_Amp_Freq(2)/t0
-    w_star = Pext_Amp_Freq(3)*t0
-    mn = Pext_Amp_Freq(4)
-    tspan_star
+    dt_star = Pext_Amp_Freq(2)/t0;
+    w_star = Pext_Amp_Freq(3)*t0;
+    mn = Pext_Amp_Freq(4);
 end
 Pv = Pvsat(1*T_inf)/P_inf;
 REq = 1;
@@ -234,6 +236,7 @@ Tau = X(:,5:(NT+4)); % Variable relating to internal temp
 C =  X(:,(NT+5):(2*NT+4)); % Vapor concentration in the bubble
 Tm = X(:, (2*NT+5):end ); % Temperature variation in the medium
 T = (A_star -1 + sqrt(1+2*Tau*A_star)) / A_star; % Temp in bubble
+
 pA = zeros(size(t));
 for n = 1:length(t) 
     pA(n) = pf(t(n)); 
@@ -342,8 +345,8 @@ end
             Pext = 0;
             P_ext_prime = 0;
         elseif strcmp(Pext_type , 'ga')
-            Pext = pf(t)/P_inf;
-            P_ext_prime = pfdot(t)/P_inf;
+            Pext = pf(t);
+            P_ext_prime = pfdot(t);
         end
         
         % *****************************************
@@ -607,9 +610,9 @@ end
         % ****************************************
         
         dxdt = [rdot; udot; pdot; Sdot; Tau_prime; C_prime; Tm_prime];
-         if isreal(rdot)==0
-             pause;
-         end 
+        %if isreal(rdot)==0
+        %     pause;
+        % end 
              
     end
 %*************************************************************************
@@ -657,7 +660,7 @@ end
     end
 
 
-        % acoustic pressure
+    % acoustic pressure
     function p = pf(t)
         
         if t < dt_star - pi/w_star 
@@ -667,7 +670,6 @@ end
             p = 0;
         else
             p = Pext_Amp_Freq(1)./P_inf.*(0.5 + 0.5*cos(w_star.*(t - dt_star))).^mn;
-            fprintf('pressure negative')
         end
         
     end

@@ -40,7 +40,7 @@ P_inf = Pmt_temp(19); T_inf = Pmt_temp(20);
 
 % Pext_Amp_Freq =[P_guess 0]; % [ Pressure ; Freq ], Freq = 0 for IC
 
-Pext_Amp_Freq = [-24e6 5e-7 2*pi*1e6 3.7];
+Pext_Amp_Freq = [-24e6; 5e-7; 2*pi*1e6; 3.7];
 %Pext_Amp_Freq = [100 0];
 
 % Simulation parameters
@@ -177,7 +177,7 @@ Respread = 0.1;
 % CHANGE: R0 is added to the state vector in initialize.m, append R0spread here.
 spread = [Rspread; Uspread; Pspread; Sspread; ones(NT,1)*tauspread; ...
     ones(NT,1)*Cspread; ones(NTM,1)*Tmspread; Brspread; fohspread; ...
-    Caspread; Respread; Despread; alphaspread; lambda_nuspread; R0spread];
+    Caspread; Respread; R0spread];
 
 % old version
 %   xi = (1 + spread .* randn(N,q)) .* repmat(x_init,1,q) + ...
@@ -212,7 +212,7 @@ xi(3,:) = log(x0_true(3));
 
 % for imr: xi = [xi(1:2*NT+NTM+6,:);log(xi(2*NT+NTM+7:2*NT+NTM+8,:));xi(end-2,:);log(xi(end-1,:));xi(end,:)]; % for now
 
-xi = [xi(1:2*NT+NTM+6,:);log(xi(2*NT+NTM+7:2*NT+NTM+8,:));xi(end-3,:);log(xi(end-2,:));xi(end-1,:);log(xi(end,:))];
+xi = [xi(1:2*NT+NTM+6,:);log(xi(2*NT+NTM+7:2*NT+NTM+8,:));log(xi(end,:))];
 %
 
 %% Other parameters to initialize

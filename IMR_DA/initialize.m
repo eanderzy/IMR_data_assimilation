@@ -10,10 +10,10 @@ global dt_star w_star mn
 %***************************************
 % Extract viscoelastic parameters from stuct
 G = visco_params.G;
-G1 = visco_params.G1;
+G1 = 0;%visco_params.G1;
 mu = visco_params.mu;
-alpha = visco_params.alpha;
-lambda_nu = visco_params.lambda_nu;
+alpha = 0;%visco_params.alpha;
+lambda_nu = 0;%visco_params.lambda_nu;
 
 % Load Parameters :
 % CHANGE: R0 here is whatever was set in import_data_exp.m.
@@ -104,9 +104,9 @@ C0 = C0*ones(1,NT);
 Tm0 = ones(1,NTM);
 
 if strcmp(Pext_type,'ga')
-    dt_star = Pext_Amp_Freq(2) / t0;           % center time (s) → dimensionless
-    w_star  = 2*pi * Pext_Amp_Freq(3) * t0;    % carrier freq (Hz) → dimensionless angular freq
-    mn      = Pext_Amp_Freq(4);                 % Hann window exponent
+    dt_star = Pext_Amp_Freq(2)/t0;
+    w_star = Pext_Amp_Freq(3)*t0;
+    mn = Pext_Amp_Freq(4);
 end
 Pv = Pvsat(1*T_inf)/P_inf;
 REq = 1;
@@ -159,7 +159,9 @@ tau_del = [];
 
 % to infer R0 as a free parameter, append log(R0) to the state vector here:
 
-x0_true = [X0, Br, foh, Ca, Re, De, alpha, lambda_nu, log(R0), est_params];
+%x0_true = [X0, Br, foh, Ca, Re, De, alpha, lambda_nu, log(R0), est_params];
+x0_true = [X0, Br, foh, Ca, Re, R0, est_params];
+
 % This matches the Mancia 2021 state vector: x = {R, Rdot, pb, S, T, C, G, mu, R0, alpha}.
 % The log transform keeps R0 positive during the DA update (same convention as Ca, Re).
 N = length(x0_true);

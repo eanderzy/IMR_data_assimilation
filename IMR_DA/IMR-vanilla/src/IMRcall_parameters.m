@@ -7,25 +7,25 @@ function [P]  = IMRcall_parameters(R0,G,G1,mu)
     %0 < G < 10^6; % (Pa) Medium Shear Modulus 
     %0 < mu < 10^3; % (Pa s) Viscocity 
     
-    A = 5.3e-5; % (W/m-K^2)Thermal Conductivity coeff
-    B = 1.17e-2; %(W/m-K)Thermal Conductivity coeff
+    A = 5.28e-5; % (W/m-K^2)Thermal Conductivity coeff
+    B = 1.165e-2; %(W/m-K)Thermal Conductivity coeff
     D0 = 24.2e-6; %Diffusion Coeff m^2/s
     k = 1.4; % Ratio of Specific Heats 
-    S = 0.056; %0.056; % JY!!! % 0.056; % (N/m) Liquid Surface Tension 
+    S = 0.072; %0.056; % JY!!! % 0.056; % (N/m) Liquid Surface Tension 
     T_inf = 298.15; % (K) Far field temp. 
     P_inf = 101325; % (Pa) Atmospheric Pressure 
-    rho = 1060; % (Kg/m^3) Liquid Density
+    rho = 1000; % (Kg/m^3) Liquid Density
     Km = 0.55;  %(W/m-K)Thermal Conductivity Medium
+    Cp = 4.181e3; %ESTRADA
+    Dm = Km /(rho*Cp) ; % Thermal Diffusivity m^2/s 
     Ru = 8.3144598; % (J/mol-K) Universal Gas Constant
     Rv = Ru/(18.01528e-3); % (18.01528e-3) (28.966e-3); % (J/Kg-K) Gas constant vapor
-    Ra = Ru/(28.966e-3); % (J/Kg-K)Gas constant air
+    Ra = 438.275;% Ru/(28.966e-3); % (J/Kg-K)Gas constant air
     Rnondim = P_inf/(rho*T_inf);
     %Cp = Ra*k/(k-1) % 1e3; %4.181e3; % Specific Heat Medium J/Kg K;
-    Cp = 1.62; %ESTRADA
-    Dm = Km /(rho*Cp) ; % Thermal Diffusivity m^2/s 
-    L = 2; % Strech variable to map domain outside the bubble
+    L = 1; % Strech variable to map domain outside the bubble
     L_heat = 2264.76e3; % (J/Kg) Latent heat of evaporation 
-    C = 1430;%1540;%1484; % sound speed (m/s)
+    C = 1496;%1540;%1484; % sound speed (m/s)
     
   % Intermidiate calculated variables
   

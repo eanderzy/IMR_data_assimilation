@@ -33,12 +33,13 @@ peak_time = peak_indices(num_peaks);
 %   exp_data = load([data_filepath,data_filename]);
 %   Rnew = exp_data.R;  t = exp_data.t;
 bubble_table = knn_data.exp_data{bubble_idx};
-t    = bubble_table.time(:)   * 1e6;   % µs → s
-Rexp = bubble_table.radius(:) * 1e6;   % µm → m
+t    = bubble_table.time(:);
+Rexp = bubble_table.radius(:); 
 
 t = t-t(1); % time shift
-R0  = R0_guess;       % m, from knn_data.results_all.R0(bubble_idx) set in DA_master.m
+R0  = R0_guess;    % m, from knn_data.results_all.R0(bubble_idx) set in DA_master.m
 yth = (Rexp ./ R0)';     % normalised radius (peaks above 1 at maximum expansion)
+sprintf('max yth: %0.5f',max(yth))
 
 % delete NaNs
 kk = 1;

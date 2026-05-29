@@ -26,12 +26,12 @@ Br = xi(2*NT+NTM+5);
 foh = xi(2*NT+NTM+6);
 Ca = exp(xi(2*NT+NTM+7));
 Re = exp(xi(2*NT+NTM+8));
-De = xi(2*NT+NTM+9);
-alpha = exp(xi(2*NT+NTM+10));
-lambda_nu = xi(2*NT+NTM+11);
+%De = xi(2*NT+NTM+9);
+%alpha = exp(xi(2*NT+NTM+10));
+%lambda_nu = xi(2*NT+NTM+11);
 
 % if R0 is added to the state vector (as log(R0) at index 2*NT+NTM+12),
-R0 = exp(xi(2*NT+NTM+12));
+R0 = exp(xi(2*NT+NTM+9));
 
 % Then recompute Ca and Re from R0 and the current ensemble values of G and mu,
 % because Ca=P_inf/G and Re=P_inf*R0/(mu*Uc) both depend on R0 through Uc=sqrt(P_inf/rho).
@@ -45,10 +45,10 @@ R0 = exp(xi(2*NT+NTM+12));
 xi(3) = exp(xi(3));
 xi(5+NT:4+(2*NT)) = max(xi(5+NT:4+(2*NT)),0);
 
-options = odeset('RelTol',1e-3);
+options = odeset('RelTol',1e-3,'MaxStep',0.1/w_star);
 %[~ ,X] = ode23tb(@bubble, [ti_star tf_star], xi(1:end-2)',options);
 %[~ ,X] = ode23tb(@bubble, [ti_star tf_star], xi(1:2*NT+NTM+4)');
-[~ ,X] = ode15s(@bubble, [ti_star tf_star], xi(1:2*NT+NTM+4)');
+[~ ,X] = ode15s(@bubble, [ti_star tf_star], xi(1:2*NT+NTM+4)',options);
 
 xf = [X(end,:)';Br;foh;xi(2*NT+NTM+7:end)];
 xf(3) = log(xf(3));

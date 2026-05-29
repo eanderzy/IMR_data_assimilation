@@ -142,6 +142,8 @@ for j = 1
         b = linsolve(GGinv,sum(aux2,2));
         
         dx1 = A10*b + A10*GG*pinv(A10'*A10)*A10'*(x10-x1);
+        step_size = 0.25;   % start with half steps, tune between 0.1 and 1.0
+        dx1 = step_size * dx1;
         %norm(dx1)
         if norm(dx1) <= epsilon | jj == max_iter
             x2 = mean(E2(:,:,end),2);
@@ -166,6 +168,6 @@ for j = 1
     
 end
 %%
-c = clock;
-save(['IEnKS_MDA_lag',num2str(l),'_q',num2str(q),'test1_',datestr(now)],'-v7.3')
+%c = clock;
+%save(['IEnKS_MDA_lag',num2str(l),'_q',num2str(q),'test1_',datestr(now)],'-v7.3')
 run_time = toc

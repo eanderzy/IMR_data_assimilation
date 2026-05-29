@@ -8,14 +8,14 @@
 %addpath ~/Dropbox/Research/Code/EnKS/v2/IMRfiles
 %addpath ~/Dropbox/Research/Code/EnKS/v2/paper_data
 %addpath ~/Dropbox/Research/Code/EnKS/v2/paper_data/draft
-load('/Users/eanderzy/projects/IMR_data_assimilation/IMR_DA/IEnKS_MDA_lag53_q48test1_26-May-2026 15:48:03.mat')
+load('/Users/eanderzy/projects/IMR_data_assimilation/test_bubble01_En4D_neoHook_q48_G6823_mu0.0582_2026-05-29_12-33.mat')
 
 set(groot, 'defaultAxesTickLabelInterpreter','latex');
 set(groot, 'defaultLegendInterpreter','latex');
 set(groot, 'defaulttextinterpreter','latex');
 
 % For dimensional parameter calculation:
-rho = 1060; % (Kg/m^3) Liquid Density taken from Estrada et. al
+rho = 1003; % (Kg/m^3) Liquid Density taken from Estrada et. al
 Uc = sqrt(P_inf/rho);
 
 %% extract needed data from ensemble:
@@ -25,15 +25,18 @@ jj_range = 0:jj-1;
 
 Ca_est = exp(x_est(2*NT+NTM+7,1:jj-1));
 Re_est = exp(x_est(2*NT+NTM+8,1:jj-1));
-De_est = x_est(2*NT+NTM+9,1:jj-1);
-alpha_est = exp(x_est(2*NT+NTM+10,1:jj-1));
-lambda_nu_est = x_est(2*NT+NTM+11,1:jj-1);
+%De_est = x_est(2*NT+NTM+9,1:jj-1);
+%alpha_est = exp(x_est(2*NT+NTM+10,1:jj-1));
+%lambda_nu_est = x_est(2*NT+NTM+11,1:jj-1);
+R0_est = exp(x_est(2*NT+NTM+9,1:jj-1));
 
 Ca_est = [Ca,Ca_est];
 Re_est = [Re,Re_est];
-De_est = [De,De_est];
-alpha_est = [alpha,alpha_est];
-lambda_nu_est = [lambda_nu,lambda_nu_est];
+%De_est = [De,De_est];
+%alpha_est = [alpha,alpha_est];
+%lambda_nu_est = [lambda_nu,lambda_nu_est];
+R0_est = [R0, R0_est];
+
 
 %CaError = 100*(abs(Ca_est-Ca_true)./Ca_true);
 %ReError = 100*(abs(Re_est-Re_true)./Re_true);
@@ -72,9 +75,10 @@ xf = [x1,squeeze(mean(E2,2))];
 
 disp(['G estimate: ',num2str(G_est(end))])
 disp(['mu estimate: ',num2str(mu_est(end))])
-disp(['De estimate: ',num2str(De_est(end))])
-disp(['alpha estimate: ',num2str(alpha_est(end))])
-disp(['lambda_nu estimate: ',num2str(lambda_nu_est(end))])
+%disp(['De estimate: ',num2str(De_est(end))])
+%disp(['alpha estimate: ',num2str(alpha_est(end))])
+%disp(['lambda_nu estimate: ',num2str(lambda_nu_est(end))])
+disp(['R0 estimate: ',num2str(R0_est(end))])
 
 disp(['run time: ',num2str(round(run_time)),' seconds or ', ...
     num2str(round(run_time/60)),' minutes'])
@@ -108,20 +112,20 @@ Re_max = exp(X_max(2*NT+NTM+8,:));
 Re_minsigma = exp(X_minsigma(2*NT+NTM+8,:));
 Re_plussigma = exp(X_plussigma(2*NT+NTM+8,:));
 
-De_min = exp(X_min(2*NT+NTM+9,:));
-De_max = exp(X_max(2*NT+NTM+9,:));
-De_minsigma = exp(X_minsigma(2*NT+NTM+9,:));
-De_plussigma = exp(X_plussigma(2*NT+NTM+9,:));
+%De_min = exp(X_min(2*NT+NTM+9,:));
+%De_max = exp(X_max(2*NT+NTM+9,:));
+%De_minsigma = exp(X_minsigma(2*NT+NTM+9,:));
+%De_plussigma = exp(X_plussigma(2*NT+NTM+9,:));
 
-alpha_min = exp(X_min(2*NT+NTM+10,:));
-alpha_max = exp(X_max(2*NT+NTM+10,:));
-alpha_minsigma = exp(X_minsigma(2*NT+NTM+10,:));
-alpha_plussigma = exp(X_plussigma(2*NT+NTM+10,:));
+%alpha_min = exp(X_min(2*NT+NTM+10,:));
+%alpha_max = exp(X_max(2*NT+NTM+10,:));
+%alpha_minsigma = exp(X_minsigma(2*NT+NTM+10,:));
+%alpha_plussigma = exp(X_plussigma(2*NT+NTM+10,:));
 
-lambda_nu_min = exp(X_min(2*NT+NTM+11,:));
-lambda_nu_max = exp(X_max(2*NT+NTM+11,:));
-lambda_nu_minsigma = exp(X_minsigma(2*NT+NTM+11,:));
-lambda_nu_plussigma = exp(X_plussigma(2*NT+NTM+11,:));
+%lambda_nu_min = exp(X_min(2*NT+NTM+11,:));
+%lambda_nu_max = exp(X_max(2*NT+NTM+11,:));
+%lambda_nu_minsigma = exp(X_minsigma(2*NT+NTM+11,:));
+%lambda_nu_plussigma = exp(X_plussigma(2*NT+NTM+11,:));
 
 G_min = P_inf./Ca_min;
 G_max = P_inf./Ca_max;
@@ -188,6 +192,7 @@ set(gca,'fontsize',20)
 
 % U, P, S evolution with final initial conditions
 
+%{
 figure(2)
 clf
 
@@ -231,6 +236,8 @@ xlabel('time step')
 ylabel('$\frac{S}{p_{\infty}}$')
 grid on
 set(gca,'fontsize',20)
+
+%}
 
 % Full time domain plotting (if cropped DAW):
 %{
@@ -306,7 +313,7 @@ end
 figure(8)
 clf
 
-subplot(2,1,1)
+subplot(3,1,1)
 hold on
 plot(jj_range,log(Ca_est),'ko-')
 legend('Estimate','location','northeast')
@@ -315,11 +322,19 @@ ylabel('$log(Ca)$')
 grid on
 set(gca,'fontsize',20)
 
-subplot(2,1,2)
+subplot(3,1,2)
 hold on
 plot(jj_range,log(Re_est),'ko-')
 xlabel('iteration')
 ylabel('$log(Re)$')
+grid on
+set(gca,'fontsize',20)
+
+subplot(3,1,3)
+hold on
+plot(jj_range,(R0_est)*1e6,'ko-')
+xlabel('iteration')
+ylabel('$R0$')
 grid on
 set(gca,'fontsize',20)
 
@@ -378,6 +393,7 @@ grid on
 set(gca,'fontsize',20)
 
 % Other parameters
+%{
 figure(90)
 clf
 
@@ -399,7 +415,7 @@ grid on
 set(gca,'fontsize',20)
 
 % Error in parameters estimation
-%{
+
 %Ca, Re
 figure(8888)
 clf
@@ -537,7 +553,7 @@ fill([t(j_range)./t0,fliplr(t(j_range)./t0)],[x_minsigma(1,j_range),fliplr(x_plu
 xlim([0 t(length(j_range))./t0])
 legend('measurement','4Dvar estimate','ensemble','location','northwest')
 xlabel('$t^*$')
-ylabel('$\frac{R}{R_{max}}$')
+ylabel('$\frac{R}{R_{o}}$')
 grid on
 set(gca,'fontsize',20)
 %}

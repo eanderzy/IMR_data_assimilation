@@ -11,10 +11,10 @@ function [P]  = IMRcall_parameters(R0,G,G1,mu)
     B = 1.165e-2; %(W/m-K)Thermal Conductivity coeff
     D0 = 24.2e-6; %Diffusion Coeff m^2/s
     k = 1.4; % Ratio of Specific Heats 
-    S = 0.056; % (N/m) Liquid Surface Tension 
+    S = 0.072; % (N/m) Liquid Surface Tension 
     T_inf = 298.15; % (K) Far field temp. 
     P_inf = 101325; % (Pa) Atmospheric Pressure 
-    rho = 998.2; % (Kg/m^3) Liquid Density
+    rho = 1003; %998.2; % (Kg/m^3) Liquid Density
     Km = 0.55;  %(W/m-K)Thermal Conductivity Medium
     Cp = 4.181e3; % Specific Heat Medium J/Kg K;
     Dm = Km /(rho*Cp) ; % Thermal Diffusivity m^2/s 
@@ -55,7 +55,7 @@ function [P]  = IMRcall_parameters(R0,G,G1,mu)
     L_heat_star = L_heat/(Uc)^2;
     Km_star = Km/K_infy; 
     C_star = C/Uc; 
-    De = (mu/G1)*Uc/R0;
+    De = 0;%(mu/G1)*Uc/R0;
     
     P = [k chi fom foh Ca Re We Br A_star...
          B_star Rv_star Ra_star P0_star t0 C0 L L_heat_star Km_star ...
